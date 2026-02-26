@@ -2,7 +2,7 @@ import requests
 from ai.prompt_templates import SYSTEM_PROMPT
 from memory.database import get_recent_messages
 
-API_KEY = "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"
+API_KEY = ""
 
 def call_ai(user_id, user_message):
 
@@ -33,4 +33,5 @@ def call_ai(user_id, user_message):
 
     result = r.json()
     return result["choices"][0]["message"]["content"]
+
 
