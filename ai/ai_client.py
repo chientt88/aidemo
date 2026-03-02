@@ -1,9 +1,12 @@
-import json
+﻿import json
 import requests
 from ai.prompt_templates import SYSTEM_PROMPT, TOOL_DECIDER_PROMPT
 from memory.database import get_recent_messages
 from core.tools import TOOLS
 import config
+import logging
+
+logger = logging.getLogger(__name__)
 
 API_KEY = config.get("groq_api_key")
 url = "https://api.groq.com/openai/v1/chat/completions"
@@ -11,6 +14,19 @@ headers = {
     "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json"
 }
+
+
+def _extract_content(r: requests.Response) -> str | None:
+    """Parse response and return content string, or None if error."""
+    if r.status_code != 200:
+        logger.error(f"Groq API error {r.status_code}: {r.text}")
+        return None
+    result = r.json()
+    if "choices" not in result:
+        logger.error(f"Groq unexpected response: {result}")
+        return None
+    return result["choices"][0]["message"]["content"]
+
 
 def call_ai(user_id, user_message):
     history = get_recent_messages(user_id)
@@ -25,12 +41,10 @@ def call_ai(user_id, user_message):
     }
 
     r = requests.post(url, headers=headers, json=data)
-
-    print("STATUS:", r.status_code)
-    print("RESPONSE:", r.text)
-
-    result = r.json()
-    return result["choices"][0]["message"]["content"]
+    content = _extract_content(r)
+    if content is None:
+        return "⚠️ AI tạm thời không phản hồi được, vui lòng thử lại sau."
+    return content
 
 
 def decide_tool(user_message):
@@ -52,12 +66,13 @@ def decide_tool(user_message):
     }
 
     r = requests.post(url, headers=headers, json=data)
-    result = r.json()
-    content = result["choices"][0]["message"]["content"]
+    content = _extract_content(r)
+    if content is None:
+        return {"tool": None}
 
-    print("TOOL RAW:", content)
+    logger.debug(f"TOOL RAW: {content}")
 
     try:
         return json.loads(content)
-    except:
+    except json.JSONDecodeError:
         return {"tool": None}
