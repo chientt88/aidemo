@@ -1,9 +1,10 @@
 ﻿import json
+import config
 from datetime import datetime
 
-TRADE_FILE = r"C:\policy_tool\Train\bnDemo\trade_history.json"
 
-def load_trade_data(file_path=TRADE_FILE):
+def load_trade_data():
+    file_path = config.get("trade_history_file")
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -11,8 +12,8 @@ def load_trade_data(file_path=TRADE_FILE):
         return {"transactions": []}
 
 
-def count_today_trades(file_path=TRADE_FILE):
-    data = load_trade_data(file_path)
+def count_today_trades():
+    data = load_trade_data()
     today = datetime.now().date()
 
     count = sum(
@@ -23,8 +24,8 @@ def count_today_trades(file_path=TRADE_FILE):
     return f"{count} lần swap hôm nay"
 
 
-def summarize_today_trades(file_path=TRADE_FILE):
-    data = load_trade_data(file_path)
+def summarize_today_trades():
+    data = load_trade_data()
     today = datetime.now().date()
 
     trades = [
@@ -49,8 +50,8 @@ def summarize_today_trades(file_path=TRADE_FILE):
     }
 
 
-def get_wallet_status(file_path=TRADE_FILE):
-    data = load_trade_data(file_path)
+def get_wallet_status():
+    data = load_trade_data()
 
     transactions = data.get("transactions", [])
     initial_coin = data.get("initial_coin", "N/A")

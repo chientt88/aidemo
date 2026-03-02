@@ -1,12 +1,10 @@
 ﻿import json
 import asyncio
-import os
-from datetime import datetime
-
-TRADE_FILE = r"C:\policy_tool\Train\bnDemo\trade_history.json"
+import config
 
 
-def load_last_swap_id(file_path=TRADE_FILE):
+def load_last_swap_id():
+    file_path = config.get("trade_history_file")
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -18,12 +16,13 @@ def load_last_swap_id(file_path=TRADE_FILE):
         return 0
 
 
-async def watch_new_trades(bot, chat_id, interval=10, file_path=TRADE_FILE):
+async def watch_new_trades(bot, chat_id, interval=10):
     """
     Chạy background, cứ `interval` giây check 1 lần.
     Nếu có swap_id mới → gửi tin nhắn cho user.
     """
-    last_known_id = load_last_swap_id(file_path)
+    file_path = config.get("trade_history_file")
+    last_known_id = load_last_swap_id()
     print(f"[Watcher] Bắt đầu theo dõi, swap_id hiện tại: {last_known_id}")
 
     while True:
