@@ -2,6 +2,8 @@
   "bot_token": "",
   "owner_chat_id": "1343641388",
   "groq_api_key": "",
-  "last_known_ip": "174.47.84.221"
-
+  "last_known_ip": "174.47.84.221",
+  "market_status_file": "..\\xx\\market_status.json",
+  "trade_history_file": "..\\xx\\trade_history.json"
 }
+
