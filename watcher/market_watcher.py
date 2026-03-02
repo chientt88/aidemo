@@ -2,9 +2,8 @@
 import time
 import threading
 from pathlib import Path
+import config
 
-
-MARKET_STATUS_FILE = "market_status.json"
 POLL_INTERVAL = 5  # seconds
 
 
@@ -64,15 +63,14 @@ def _load_records(filepath: Path) -> list:
         return []
 
 
-def start_market_watcher(send_func, filepath: str = MARKET_STATUS_FILE, interval: int = POLL_INTERVAL):
+def start_market_watcher(send_func, interval: int = POLL_INTERVAL):
     """
     Start a background watcher thread that monitors market_status.json.
 
-    :param send_func: Async-compatible callable, signature: send_func(message: str)
-    :param filepath: Path to the JSON file to monitor.
+    :param send_func: Callable, signature: send_func(message: str)
     :param interval: Polling interval in seconds.
     """
-    path = Path(filepath)
+    path = Path(config.get("market_status_file"))
     last_count = len(_load_records(path))
 
     def _watch():
