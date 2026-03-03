@@ -1,10 +1,12 @@
 ﻿import json
 import time
 import threading
+import logging
 from pathlib import Path
 import config
 
 POLL_INTERVAL = 5  # seconds
+logger = logging.getLogger(__name__)
 
 
 def format_market_message(record: dict) -> str:
@@ -72,20 +74,35 @@ def start_market_watcher(send_func, interval: int = POLL_INTERVAL):
     """
     path = Path(config.get("market_status_file"))
     last_count = len(_load_records(path))
+    logger.info(f"[MarketWatcher] Started. Tracking from record #{last_count}, file: {path}")
 
     def _watch():
         nonlocal last_count
         while True:
             time.sleep(interval)
-            records = _load_records(path)
-            current_count = len(records)
-            if current_count > last_count:
-                new_records = records[last_count:]
-                for record in new_records:
-                    msg = format_market_message(record)
-                    send_func(msg)
-                last_count = current_count
+            try:
+                records = _load_records(path)
+                current_count = len(records)
 
-    thread = threading.Thread(target=_watch, daemon=True)
+                # File was reset/truncated by external process → re-sync baseline
+                if current_count < last_count:
+                    logger.warning(
+                        f"[MarketWatcher] File shrank ({last_count} → {current_count}). Re-syncing baseline."
+                    )
+                    last_count = current_count
+                    continue
+
+                if current_count > last_count:
+                    new_records = records[last_count:]
+                    logger.info(f"[MarketWatcher] {len(new_records)} new record(s) detected.")
+                    for record in new_records:
+                        msg = format_market_message(record)
+                        send_func(msg)
+                    last_count = current_count
+
+            except Exception as e:
+                logger.error(f"[MarketWatcher] Unexpected error: {e}")
+
+    thread = threading.Thread(target=_watch, daemon=True, name="MarketWatcher")
     thread.start()
     return thread
